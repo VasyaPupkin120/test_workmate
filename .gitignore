@@ -1,3 +1,6 @@
-*
-!analyze.py
-!.gitignore
+__pycache__
+.pytest_cache
+.pyc
+*large*
+.coverage
+handlers

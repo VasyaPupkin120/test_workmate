@@ -1,0 +1,17 @@
+2025-03-28 12:44:46,000 DEBUG django.request: GET /api/v1/reviews/ 204 OK [192.168.1.59]
+2025-03-28 12:44:46,000 INFO django.request: GET /api/v1/reviews/ 204 OK [192.168.1.59]
+2025-03-28 12:44:46,000 WARNING django.request: GET /api/v1/reviews/ 204 OK [192.168.1.59]
+2025-03-28 12:44:46,000 ERROR django.request: GET /api/v1/reviews/ 204 OK [192.168.1.59]
+2025-03-28 12:44:46,000 CRITICAL django.request: GET /api/v1/reviews/ 204 OK [192.168.1.59]
+
+2025-03-28 12:44:46,000 DEBUG django.request: GET /api/v1/cart/ 204 OK [192.168.1.59]
+2025-03-28 12:44:46,000 INFO django.request: GET /api/v1/cart/ 204 OK [192.168.1.59]
+2025-03-28 12:44:46,000 WARNING django.request: GET /api/v1/cart/ 204 OK [192.168.1.59]
+2025-03-28 12:44:46,000 ERROR django.request: GET /api/v1/cart/ 204 OK [192.168.1.59]
+2025-03-28 12:44:46,000 CRITICAL django.request: GET /api/v1/cart/ 204 OK [192.168.1.59]
+
+2025-03-28 12:49:16,000 WARNING django.security: SuspiciousOperation: Invalid HTTP_HOST header
+2025-03-28 12:24:19,000 DEBUG django.db.backends: (0.13) SELECT * FROM 'orders' WHERE id = 60;
+2025-03-28 12:07:23,000 CRITICAL django.core.management: ConnectionError: Failed to connect to payment gateway
+2025-03-28 12:27:32,000 INFO django.db.backends: (0.20) SELECT * FROM 'users' WHERE id = 52;
+2025-03-28 12:40:49,000 ERROR django.db.backends: (0.25) SELECT * FROM 'products' WHERE id = 68;

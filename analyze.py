@@ -6,12 +6,16 @@ NAMES_EVENTS = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 # признак лога django
 FLAG_LINE = "django.request"
 
-def parse_commandline():
+def parse_commandline(test_args=None):
     """
     Возвращает список позиционных параметров и словарь с ключевыми парамтерами и их значениями.
     Ключевые параметры без значения остаются None, то есть -l  преобразуется в  {"-l": None}.
+    Параметр all_args нужен для тестирования.
     """
-    all_args = sys.argv[1:]
+    if test_args:
+        all_args = test_args
+    else:
+        all_args = sys.argv[1:]
     kwargs = {}
     args = []
     prev_is_kwargs = False
@@ -151,13 +155,12 @@ def summarize(reports:list)->dict:
 
 def analyze(filenames:list, kwargs:dict):
     if not filenames:
-        print(f"Отстутсвуют имена файлов.")
-        return
+        return "Отстутсвуют имена файлов."
 
     err_filename = files_is_exists(filenames)
     if err_filename:
-        print(f"Файл {err_filename} не существует.")
-        return
+        return f"Файл {err_filename} не существует."
+        
 
     if not kwargs.get('--report'):
         filename_report = "handlers"
@@ -166,8 +169,8 @@ def analyze(filenames:list, kwargs:dict):
             print(f"Ваше имя файла отчета '{kwargs['--report']}' не совпадает с именем по умолчанию 'handlers'.")
             castom_filename = input("Использовать ваше имя файла отчета? (y/n)")
             if castom_filename not in ("y", "Y", "д", "Д", "yes", "Yes", "да", "Да"):
-                return
-            filename_report = kwargs['--report']
+                return "Отказ от нестандартного имени отчета. Остановка работы."
+        filename_report = kwargs['--report']
 
     reports = []
     for filename in filenames:
@@ -177,17 +180,13 @@ def analyze(filenames:list, kwargs:dict):
     resultat = report_to_str_default(summarize_report)
     with open(filename_report, "w") as f:
         f.write(resultat)
-    print(resultat)
-
-
-
-
-
-
+    return resultat
 
 
 
 if __name__ == "__main__":
     filenames, kwargs = parse_commandline()
-    analyze(filenames, kwargs)
+    print(analyze(filenames, kwargs))
+
+
 
