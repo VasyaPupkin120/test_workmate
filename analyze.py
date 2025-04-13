@@ -1,5 +1,4 @@
 import os
-import time
 import sys
 import re
 
@@ -45,8 +44,9 @@ def files_is_exists(filenames:list):
     return None
 
 
-def handlers_info_to_str(handlers_info:dict, statistic:dict):
+def report_to_str_default(report:dict):
     """
+    Вариант отчета по умолчанию.
     Все данные в строку, далее либо на печать в консоль либо в файл.
     """
 
@@ -54,15 +54,16 @@ def handlers_info_to_str(handlers_info:dict, statistic:dict):
     space = 2 # пробелы между столбцами
     symbol_h_line = "-"
 
+    report = dict(sorted(report.items()))
     # сумма количества событий для всех ручек
     sum_by_events = {name_event: 0 for name_event in NAMES_EVENTS}
-    for _, events in handlers_info.items():
+    for _, events in report.items():
         for name_event, value_event in events.items():
             sum_by_events[name_event] += value_event
 
     # макс.ширина столбца с ручками. Расчет на основе длин названий ручек и заголовка для них
     name_handler_column = "HANDLER"
-    width_column_handlers = max([len(key) for key in handlers_info.keys()] + [len(name_handler_column),]) 
+    width_column_handlers = max([len(key) for key in report.keys()] + [len(name_handler_column),]) 
     # расчет ширины для столбцов с событиями. Это либо ширина заголовка, либо ширина суммы
     widths_column_events = {name_event: 0 for name_event in NAMES_EVENTS}
     for name_event, value_event in sum_by_events.items():
@@ -76,8 +77,10 @@ def handlers_info_to_str(handlers_info:dict, statistic:dict):
 
     # общая информация
     ret_line = symbol_h_line * width_h_line + "\n"
-    ret_line = ret_line + f"Total requests: {statistic['count_all']}" + "\n"
-    ret_line = ret_line + f"Django requests: {statistic['count_django']}" + "\n"
+    total_requests = 0
+    for _, value_event in sum_by_events.items():
+        total_requests += value_event
+    ret_line = ret_line + f"Total requests: {total_requests}" + "\n"
     ret_line = ret_line + symbol_h_line * width_h_line + "\n"
 
     # заголовки таблицы
@@ -88,7 +91,7 @@ def handlers_info_to_str(handlers_info:dict, statistic:dict):
     ret_line = ret_line + symbol_h_line * width_h_line + "\n"
 
     # тело таблицы
-    for handler_name, handler_events in handlers_info.items():
+    for handler_name, handler_events in report.items():
         line_table = handler_name.ljust(width_column_handlers + space)
         for name_event, value_event in handler_events.items():
             line_table += str(value_event).ljust(widths_column_events[name_event] + space)
@@ -104,10 +107,6 @@ def handlers_info_to_str(handlers_info:dict, statistic:dict):
     ret_line += line_results
     ret_line = ret_line + symbol_h_line * width_h_line + "\n"
 
-    # время работы
-    ret_line = ret_line + f"Время работы: {statistic['work_time']} с." + "\n"
-    ret_line = ret_line + symbol_h_line * width_h_line + "\n"
-
     return ret_line
 
 
@@ -119,10 +118,7 @@ def analyze_one_file(filename):
        {"/api/v1/reviews/": {"DEBUG": 0, "INFO": 0, ...}} 
 
     """
-    start_time = time.time()
-    handlers_info = {}
-    count_all_lines = 0
-    count_django_request_lines = 0
+    report = {}
 
     log_levels_group = "(" + "|".join(NAMES_EVENTS) + ")"
     handler_name_group = r".*?(/\S+/)"
@@ -130,38 +126,38 @@ def analyze_one_file(filename):
 
     with open(filename, 'r') as f:
         for line in f:
-            count_all_lines += 1
             if FLAG_LINE in line:
-                count_django_request_lines += 1
                 match = pattern.search(line) 
                 if not match:
                     print(f"Строка '{line}' содержит признак лога Django '{FLAG_LINE}' но не соответствует шаблону (ошибка в имени события или имени handler'a).")
                     continue
-                if match.groups()[1] not in handlers_info.keys():
-                    handlers_info[match.groups()[1]] = {}
-                    for level in NAMES_EVENTS:
-                        handlers_info[match.groups()[1]][level] = 0
-                handlers_info[match.groups()[1]][match.groups()[0]] += 1
-
-    work_time = int(time.time() - start_time) 
-    statistic = {
-            "count_all": count_all_lines, 
-            "count_django": count_django_request_lines, 
-            "work_time": work_time
-            } 
-
-    return handlers_info, statistic
+                if match.groups()[1] not in report.keys():
+                    report[match.groups()[1]] = {event_name: 0 for event_name in NAMES_EVENTS}
+                report[match.groups()[1]][match.groups()[0]] += 1
+    return report
 
 
-def analyze(filenames, kwargs):
+def summarize(reports:list)->dict:
+    # сумма количества событий для всех ручек
+    summarize_report = {}
+    for report in reports:
+        for handler_name, handler_events in report.items():
+            if handler_name not in summarize_report.keys():
+                summarize_report[handler_name] = {event: 0 for event in NAMES_EVENTS}
+            for name_event, value_event in handler_events.items():
+                summarize_report[handler_name][name_event] += value_event
+    return summarize_report
+
+
+def analyze(filenames:list, kwargs:dict):
     if not filenames:
         print(f"Отстутсвуют имена файлов.")
-        quit()
+        return
 
     err_filename = files_is_exists(filenames)
     if err_filename:
         print(f"Файл {err_filename} не существует.")
-        quit()
+        return
 
     if not kwargs.get('--report'):
         filename_report = "handlers"
@@ -170,13 +166,21 @@ def analyze(filenames, kwargs):
             print(f"Ваше имя файла отчета '{kwargs['--report']}' не совпадает с именем по умолчанию 'handlers'.")
             castom_filename = input("Использовать ваше имя файла отчета? (y/n)")
             if castom_filename not in ("y", "Y", "д", "Д", "yes", "Yes", "да", "Да"):
-                quit()
+                return
             filename_report = kwargs['--report']
 
+    reports = []
     for filename in filenames:
-        handlers_info, statistic = analyze_one_file(filename)
-        result_str = handlers_info_to_str(handlers_info, statistic)
-        print(result_str)
+        report = analyze_one_file(filename)
+        reports.append(report)
+    summarize_report = summarize(reports)
+    resultat = report_to_str_default(summarize_report)
+    with open(filename_report, "w") as f:
+        f.write(resultat)
+    print(resultat)
+
+
+
 
 
 
