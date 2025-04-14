@@ -1,6 +1,8 @@
 import os
 import sys
 import re
+import time
+from multiprocessing import Pool
 
 NAMES_EVENTS = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 # признак лога django
@@ -172,10 +174,8 @@ def analyze(filenames:list, kwargs:dict):
                 return "Отказ от нестандартного имени отчета. Остановка работы."
         filename_report = kwargs['--report']
 
-    reports = []
-    for filename in filenames:
-        report = analyze_one_file(filename)
-        reports.append(report)
+    reports = Pool().map(analyze_one_file, filenames)
+
     summarize_report = summarize(reports)
     resultat = report_to_str_default(summarize_report)
     with open(filename_report, "w") as f:
@@ -185,8 +185,10 @@ def analyze(filenames:list, kwargs:dict):
 
 
 if __name__ == "__main__":
+    start_time = time.time()
     filenames, kwargs = parse_commandline()
     print(analyze(filenames, kwargs))
+    print("Время работы: ", int(time.time() - start_time), " секунд")
 
 
 
