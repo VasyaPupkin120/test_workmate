@@ -8,11 +8,12 @@ NAMES_EVENTS = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 # признак лога django
 FLAG_LINE = "django.request"
 
-def parse_commandline(test_args=None):
+
+def parse_commandline(test_args:list[str]=[]) -> tuple:
     """
     Возвращает список позиционных параметров и словарь с ключевыми парамтерами и их значениями.
     Ключевые параметры без значения остаются None, то есть -l  преобразуется в  {"-l": None}.
-    Параметр all_args нужен для тестирования.
+    Параметр test_args нужен для тестирования.
     """
     if test_args:
         all_args = test_args
@@ -43,14 +44,14 @@ def parse_commandline(test_args=None):
     return args, kwargs
 
 
-def files_is_exists(filenames:list):
+def files_is_exists(filenames:list[str]) -> str|None:
     for file in filenames:
         if not os.path.isfile(file):
             return file
     return None
 
 
-def report_to_str_default(report:dict):
+def report_to_str_default(report:dict[str, dict[str, int]]) -> str:
     """
     Вариант отчета по умолчанию.
     Все данные в строку, далее либо на печать в консоль либо в файл.
@@ -116,8 +117,7 @@ def report_to_str_default(report:dict):
     return ret_line
 
 
-
-def analyze_one_file(filename):
+def analyze_one_file(filename:str) -> dict[str, dict[str, int]]:
     """
     Создает и возвращает словарь с словарями. Ключи на верхнем уровне - названия ручек, 
     на нижнем урове - из списка типов событий. Подсчитывается количество событий:
@@ -125,7 +125,6 @@ def analyze_one_file(filename):
 
     """
     report = {}
-
     log_levels_group = "(" + "|".join(NAMES_EVENTS) + ")"
     handler_name_group = r".*?(/\S+/)"
     pattern = re.compile(log_levels_group + handler_name_group)
@@ -143,7 +142,7 @@ def analyze_one_file(filename):
     return report
 
 
-def summarize(reports:list)->dict:
+def summarize(reports:list[dict[str, dict[str, int]]]) -> dict[str, dict[str, int]]:
     # сумма количества событий для всех ручек
     summarize_report = {}
     for report in reports:
@@ -155,14 +154,13 @@ def summarize(reports:list)->dict:
     return summarize_report
 
 
-def analyze(filenames:list, kwargs:dict):
+def analyze(filenames:list[str], kwargs:dict[str, str]) -> str:
     if not filenames:
         return "Отстутсвуют имена файлов."
 
     err_filename = files_is_exists(filenames)
     if err_filename:
         return f"Файл {err_filename} не существует."
-        
 
     if not kwargs.get('--report'):
         filename_report = "handlers"
@@ -178,10 +176,10 @@ def analyze(filenames:list, kwargs:dict):
 
     summarize_report = summarize(reports)
     resultat = report_to_str_default(summarize_report)
+
     with open(filename_report, "w") as f:
         f.write(resultat)
     return resultat
-
 
 
 if __name__ == "__main__":
