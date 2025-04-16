@@ -168,7 +168,7 @@ def analyze(filenames:list, kwargs:dict):
         filename_report = "handlers"
     else:
         if kwargs['--report'] != "handlers":
-            print(f"Ваше имя файла отчета '{kwargs['--report']}' не совпадает с именем по умолчанию 'handlers'.")
+            print(f"Ваше имя файла отчета \'{kwargs['--report']}\' не совпадает с именем по умолчанию 'handlers'.")
             castom_filename = input("Использовать ваше имя файла отчета? (y/n)")
             if castom_filename not in ("y", "Y", "д", "Д", "yes", "Yes", "да", "Да"):
                 return "Отказ от нестандартного имени отчета. Остановка работы."
